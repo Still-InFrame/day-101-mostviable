@@ -52,7 +52,9 @@ export const ResearchSchema = z.object({
   ),
   pricing: z.object({
     model: z.string().describe("e.g. monthly subscription, one-time purchase, usage-based."),
-    recommended_price: z.string().describe("A specific competitive price point."),
+    recommended_price: z
+      .string()
+      .describe("A specific competitive price point, e.g. '$29/month'. Under 30 characters."),
     rationale: z.string().describe("Why this price, relative to the competitors found."),
   }),
   differentiation: z.string().describe("What would make this app stand out, or that it does not."),
@@ -81,9 +83,15 @@ export const RankSchema = z.object({
       z.object({
         repo_full_name: z.string(),
         rank: z.number().describe("1, 2 or 3."),
-        headline: z.string().describe("One line on why this is a winner."),
+        headline: z
+          .string()
+          .describe("Why this is a winner, in one sentence of at most 16 words."),
         why_it_wins: z.string().describe("Three to five sentences comparing it to the other candidates."),
-        price_point: z.string().describe("The price to launch at."),
+        price_point: z
+          .string()
+          .describe(
+            "Only the launch price, e.g. '$29/month' or '$99 one-time'. Under 30 characters; put any nuance in why_it_wins.",
+          ),
       }),
     )
     .describe("Exactly three, or fewer only if fewer candidates are worth selling."),
@@ -105,13 +113,13 @@ export const RankSchema = z.object({
 export type Rank = z.infer<typeof RankSchema>;
 
 export const KitSchema = z.object({
-  positioning: z.string().describe("One-sentence positioning statement."),
+  positioning: z.string().describe("One-sentence positioning statement, at most 25 words."),
   ideal_customer: z.string().describe("A specific first customer profile."),
   pricing_tiers: z.array(
     z.object({
       name: z.string(),
-      price: z.string(),
-      includes: z.string(),
+      price: z.string().describe("Only the price, e.g. '$29/mo'. Under 20 characters."),
+      includes: z.string().describe("What the tier includes, in one short sentence."),
     }),
   ),
   channels: z

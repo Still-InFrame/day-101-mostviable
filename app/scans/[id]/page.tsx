@@ -3,11 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Report } from "@/components/Report";
 import { getSession } from "@/lib/auth";
+import { formatDate } from "@/lib/format";
 import { loadRepos, loadScan } from "@/lib/scans";
 import type { ChecklistItem } from "@/lib/types";
 
-export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
+export default async function ScanPage({ params, searchParams }: PageProps<"/scans/[id]">) {
   const { id } = await params;
+  const { view, section } = await searchParams;
   const { supabase, user } = await getSession();
   if (!user) redirect("/login");
 
@@ -17,8 +19,8 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
     return (
       <>
         <Header email={user.email} />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10">
-          <h1 className="text-2xl font-semibold">This scan has no results yet</h1>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-16">
+          <h1 className="font-display text-4xl">This scan has no results yet</h1>
           <p className="mt-2 text-muted">
             {scan.error ?? "It did not finish. You can resume it from the dashboard."}
           </p>
@@ -39,14 +41,31 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
       .order("position"),
   ]);
 
+  // Only shortlisted repos carry research; the client report needs nothing
+  // from the rest, so they are left out of the page payload.
+  const shortlist = repos
+    .filter((r) => scan.shortlist_ids.includes(r.id))
+    .map(({ id, name, full_name, html_url, homepage, research }) => ({
+      id,
+      name,
+      full_name,
+      html_url,
+      homepage,
+      research,
+    }));
+
   return (
     <>
       <Header email={user.email} />
       <Report
-        scan={scan}
+        date={formatDate(scan.completed_at ?? scan.created_at)}
+        scannedCount={scan.repo_ids.length}
+        researchedCount={scan.shortlist_ids.length}
         result={scan.result}
-        repos={repos}
+        repos={shortlist}
         items={(itemRows ?? []) as ChecklistItem[]}
+        initialView={typeof view === "string" ? view : undefined}
+        initialSection={typeof section === "string" ? section : undefined}
       />
     </>
   );

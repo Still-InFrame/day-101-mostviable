@@ -38,10 +38,12 @@ export function Workspace({
   login,
   repos: initialRepos,
   unfinishedScanId,
+  hasReport,
 }: {
   login: string;
   repos: RepoLite[];
   unfinishedScanId: string | null;
+  hasReport: boolean;
 }) {
   const router = useRouter();
   const [repos, setRepos] = useState(initialRepos);
@@ -126,22 +128,27 @@ export function Workspace({
 
   return (
     <section className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <p className="text-muted">
-          Connected as <span className="font-mono text-text">@{login}</span>
-        </p>
-        <div className="flex items-center gap-4 text-muted">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">
+            Connected as <span className="text-text normal-case">@{login}</span>
+          </p>
+          <h2 className="mt-2 font-display text-4xl">
+            {hasReport ? "Run another scan" : "Choose what to scan"}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
           <button
             onClick={refreshList}
             disabled={busy !== null}
-            className="underline-offset-4 hover:text-text hover:underline disabled:opacity-50"
+            className="rounded-full border border-line px-4 py-2 text-muted transition-colors hover:border-muted/50 hover:text-text disabled:opacity-50"
           >
             {busy === "refresh" ? "Refreshing…" : "Refresh repo list"}
           </button>
           <button
             onClick={disconnect}
             disabled={busy !== null}
-            className="underline-offset-4 hover:text-text hover:underline disabled:opacity-50"
+            className="rounded-full border border-line px-4 py-2 text-muted transition-colors hover:border-warn/50 hover:text-text disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -149,11 +156,11 @@ export function Workspace({
       </div>
 
       {unfinishedScanId && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn/40 bg-warn/10 px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warn/40 bg-warn/10 px-5 py-4 text-sm">
           <span>Your last scan did not finish. Work already done is saved.</span>
           <button
             onClick={() => runner.run(unfinishedScanId, false)}
-            className="rounded-md bg-warn px-3 py-1.5 font-medium text-bg"
+            className="rounded-full bg-warn px-4 py-1.5 font-medium text-bg"
           >
             Resume scan
           </button>
@@ -161,15 +168,15 @@ export function Workspace({
       )}
 
       {notice && (
-        <p role="alert" className="rounded-lg border border-warn/40 bg-warn/10 px-4 py-3 text-sm">
+        <p role="alert" className="rounded-xl border border-warn/40 bg-warn/10 px-5 py-4 text-sm">
           {notice}
         </p>
       )}
 
-      <div className="rounded-xl border border-line bg-panel">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+      <div className="surface overflow-hidden rounded-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
           <div>
-            <h2 className="font-medium">Choose repos to include</h2>
+            <h3 className="font-medium">Repos to include</h3>
             <p className="text-sm text-muted">
               Only ticked repos are read. Forks and archived repos start unticked.
             </p>
@@ -179,12 +186,12 @@ export function Workspace({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter repos"
             aria-label="Filter repos"
-            className="w-full rounded-md border border-line bg-bg px-3 py-1.5 text-sm outline-none placeholder:text-muted focus:border-accent sm:w-56"
+            className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-accent sm:w-60"
           />
         </div>
 
         {repos.length === 0 && (
-          <p className="px-4 py-10 text-center text-sm text-muted">
+          <p className="px-5 py-12 text-center text-sm text-muted">
             GitHub returned no repos for this account. If your repos belong to an
             organization, an owner may need to approve this app for it, then use
             Refresh repo list.
@@ -196,7 +203,7 @@ export function Workspace({
             const ids = ownerRepos.map((r) => r.id);
             return (
               <div key={owner}>
-                <div className="sticky top-0 flex items-center justify-between border-b border-line bg-raised px-4 py-2 text-sm">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-raised px-5 py-2 text-sm">
                   <span className="font-mono">
                     {owner}{" "}
                     <span className="text-muted">
@@ -215,7 +222,7 @@ export function Workspace({
                 <ul>
                   {ownerRepos.map((repo) => (
                     <li key={repo.id} className="border-b border-line/60 last:border-b-0">
-                      <label className="flex cursor-pointer items-start gap-3 px-4 py-2.5 hover:bg-raised/60">
+                      <label className="flex cursor-pointer items-start gap-3.5 px-5 py-3 transition-colors hover:bg-raised/50">
                         <input
                           type="checkbox"
                           checked={repo.included}
@@ -256,7 +263,7 @@ export function Workspace({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-panel px-4 py-4">
+      <div className="surface sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl px-5 py-4 backdrop-blur-md">
         <div className="text-sm">
           <p>
             <span className="font-mono text-accent">{selected.length}</span> selected,{" "}
@@ -281,7 +288,7 @@ export function Workspace({
           disabled={
             busy !== null || selected.length === 0 || selected.length > MAX_REPOS_PER_SCAN
           }
-          className="rounded-lg bg-accent px-5 py-2.5 font-medium text-accent-ink hover:brightness-110 disabled:opacity-40"
+          className="btn-primary rounded-full px-6 py-3"
         >
           {busy === "scan"
             ? "Starting…"

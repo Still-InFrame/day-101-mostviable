@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0e0c;
-  --panel: #111613;
-  --raised: #171e1a;
-  --line: #243029;
-  --text: #e9efe9;
-  --muted: #8d9b91;
+  --bg: #080b0a;
+  --panel: #0f1412;
+  --raised: #161d19;
+  --line: #222c26;
+  --text: #edf2ee;
+  --muted: #8f9d94;
   --accent: #b9f56e;
   --accent-ink: #0f1c03;
   --gold: #f2c552;
+  --silver: #cdd6d0;
+  --bronze: #d99c6c;
   --warn: #f19a5b;
 }
 
@@ -23,13 +25,21 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-gold: var(--gold);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
   --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-instrument-serif);
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  /* A faint glow behind the top of every page gives the dark surface depth. */
+  background-image:
+    radial-gradient(60rem 28rem at 78% -8rem, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%),
+    radial-gradient(40rem 22rem at 8% -10rem, color-mix(in srgb, var(--gold) 5%, transparent), transparent 70%);
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
@@ -37,4 +47,161 @@ body {
 ::selection {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+/* Raised card: soft top-lit gradient, hairline border, deep shadow. */
+.surface {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.008) 40%),
+    var(--panel);
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 24px 48px -28px rgb(0 0 0 / 0.75);
+}
+
+.surface-hover {
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.surface-hover:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  transform: translateY(-2px);
+}
+
+.eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, white 0%), color-mix(in srgb, var(--accent) 86%, black));
+  color: var(--accent-ink);
+  font-weight: 500;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 10px 28px -12px color-mix(in srgb, var(--accent) 70%, transparent);
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* Content entering when a tab or section changes. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: var(--ring-length);
+  }
+}
+
+.ring-arc {
+  animation: ring-fill 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.bar-grow {
+  transform-origin: left;
+  animation: bar-grow 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Scan progress motion. The sheen runs across the whole track of the phase in
+   progress so there is visible movement even while the count stands still. */
+@keyframes sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide {
+  from {
+    left: -40%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+.bar-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 45%, transparent),
+    transparent
+  );
+  animation: sheen 1.6s linear infinite;
+}
+
+.bar-slide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  animation: slide 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-sheen::after,
+  .bar-slide,
+  .rise,
+  .ring-arc,
+  .bar-grow {
+    animation: none;
+  }
+  .surface-hover:hover,
+  .btn-primary:hover:not(:disabled) {
+    transform: none;
+  }
+  .bar-slide {
+    left: 0;
+    width: 100%;
+  }
 }

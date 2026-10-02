@@ -32,7 +32,7 @@ npm run dev
 Copy `.env.local.example` to `.env.local` and fill in:
 
 - `ANTHROPIC_API_KEY`: a Claude API key.
-- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: from a GitHub OAuth App (GitHub → Settings → Developer settings → OAuth Apps). Set its callback URL to `<your origin>/api/github/callback`. An OAuth App has a single callback URL, so local development and production each need their own app.
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: from a GitHub OAuth App (GitHub → Settings → Developer settings → OAuth Apps). Add a redirect URI of `<your origin>/api/github/callback` for each origin you run on (for example `http://localhost:3000` and your production domain). Leave "Expire user access tokens" unticked: the app does not refresh tokens yet.
 - `GITHUB_TOKEN_ENCRYPTION_KEY`: `openssl rand -base64 32`.
 
 The database tables are in `supabase/schema.sql`.

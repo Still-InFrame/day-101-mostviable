@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ConnectCard, EarlierReports, Hero, TopThree } from "@/components/Dashboard";
 import { Header } from "@/components/Header";
 import { Workspace, type RepoLite } from "@/components/Workspace";
 import { getSession } from "@/lib/auth";
-import { formatDate } from "@/lib/format";
 import { currentRepos, triageIsFresh, type RepoRow, type ScanRow } from "@/lib/types";
 
 const GITHUB_NOTICES: Record<string, string> = {
@@ -76,7 +75,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     ScanRow,
     "id" | "status" | "result" | "created_at" | "completed_at"
   >[];
-  const completed = scans.filter((s) => s.status === "complete" && s.result);
+  const completed = scans.flatMap((s) =>
+    s.status === "complete" && s.result ? [{ ...s, result: s.result }] : [],
+  );
   const latest = completed[0];
   const newest = scans[0];
   const unfinished =
@@ -88,20 +89,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
       <Header email={user.email} />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-5 py-10">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Which of your apps should you sell?
-          </h1>
-          <p className="mt-3 max-w-2xl text-muted">
-            mostviable reads the repos you choose, researches the market for the
-            strongest candidates, and names the three most worth turning into a
-            product, with a price and a plan for each.
-          </p>
-        </div>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-5 pb-16">
+        <Hero />
 
         {missingEnv.length > 0 && (
-          <div className="rounded-lg border border-warn/40 bg-warn/10 px-4 py-3 text-sm">
+          <div className="rounded-xl border border-warn/40 bg-warn/10 px-5 py-4 text-sm">
             <p className="font-medium">Setup needed</p>
             <p className="mt-1 text-muted">
               These server settings are empty, so parts of the app will not work yet:{" "}
@@ -111,80 +103,25 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         )}
 
         {notice && (
-          <p role="alert" className="rounded-lg border border-warn/40 bg-warn/10 px-4 py-3 text-sm">
+          <p role="alert" className="rounded-xl border border-warn/40 bg-warn/10 px-5 py-4 text-sm">
             {notice}
           </p>
         )}
 
-        {latest?.result && (
-          <section className="rounded-xl border border-accent/30 bg-panel p-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="font-medium">
-                Your top three{" "}
-                <span className="font-normal text-muted">
-                  from {formatDate(latest.completed_at ?? latest.created_at)}
-                </span>
-              </h2>
-              <Link
-                href={`/scans/${latest.id}`}
-                className="text-sm text-accent underline-offset-4 hover:underline"
-              >
-                Open full report
-              </Link>
-            </div>
-            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-              {latest.result.winners.map((w) => (
-                <li key={w.repo_id} className="rounded-lg border border-line bg-bg p-4">
-                  <span className="font-mono text-sm text-accent">0{w.rank}</span>
-                  <p className="mt-1 font-medium break-words">{w.repo_full_name.split("/")[1]}</p>
-                  <p className="mt-1 text-sm text-muted">{w.headline}</p>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
+        {latest && <TopThree latest={latest} />}
 
         {connection ? (
           <Workspace
             login={connection.github_login}
             repos={repos}
             unfinishedScanId={unfinished}
+            hasReport={Boolean(latest)}
           />
         ) : (
-          <section className="rounded-xl border border-line bg-panel p-6">
-            <h2 className="text-lg font-medium">Connect GitHub to begin</h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted">
-              GitHub will ask you to grant access to your repositories, including
-              private ones. That permission is broader than this app needs: it only
-              ever reads, and only the repos you tick on the next screen. You can
-              disconnect at any time, which revokes the access on GitHub too.
-            </p>
-            <a
-              href="/api/github/connect"
-              className="mt-5 inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-accent-ink hover:brightness-110"
-            >
-              Connect GitHub
-            </a>
-          </section>
+          <ConnectCard />
         )}
 
-        {completed.length > 1 && (
-          <section>
-            <h2 className="text-sm font-medium text-muted">Earlier reports</h2>
-            <ul className="mt-2 flex flex-col">
-              {completed.slice(1).map((scan) => (
-                <li key={scan.id} className="border-b border-line py-2 text-sm">
-                  <Link href={`/scans/${scan.id}`} className="hover:text-accent">
-                    {formatDate(scan.completed_at ?? scan.created_at)}
-                    <span className="ml-3 text-muted">
-                      {scan.result?.winners.map((w) => w.repo_full_name.split("/")[1]).join(", ")}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {completed.length > 1 && <EarlierReports scans={completed.slice(1)} />}
       </main>
     </>
   );
