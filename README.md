@@ -1,5 +1,7 @@
 # mostviable
 
+**Live:** https://mostviable.100dayaichallenge.com
+
 <!-- deploy.sh inserts a **Live:** line here automatically -->
 
 ![mostviable — find the three apps most worth selling](./public/hero.png)
