@@ -51,7 +51,6 @@ export type ChecklistItem = {
 
 export const SHORTLIST_SIZE = 8;
 export const MAX_REPOS_PER_SCAN = 150;
-export const MAX_SCANS_PER_DAY = 5;
 const RESEARCH_MAX_AGE_DAYS = 30;
 
 // Postgres and GitHub format the same instant differently, so compare by value.

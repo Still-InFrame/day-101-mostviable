@@ -1,5 +1,6 @@
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { RepoRow } from "@/lib/types";
+import type { Meter } from "@/lib/usage";
 import { anthropic, assertCompleted, FALLBACK, MODEL, SHARED_CONTEXT } from "./client";
 import {
   KitSchema,
@@ -36,6 +37,7 @@ Choose exactly three winners unless fewer than three candidates are worth sellin
 export async function rankCandidates(
   shortlist: RepoRow[],
   others: RepoRow[],
+  meter: Meter,
 ): Promise<Rank> {
   const otherLines = others
     .map(
@@ -59,6 +61,7 @@ export async function rankCandidates(
       ],
     })
     .finalMessage();
+  meter.record(message);
   assertCompleted(message);
   if (!message.parsed_output) throw new Error("Ranking returned no structured output");
   return message.parsed_output;
@@ -74,6 +77,7 @@ export async function buildKit(
   repo: RepoRow,
   winner: Rank["winners"][number],
   completedTasks: string[],
+  meter: Meter,
 ): Promise<Kit> {
   const done = completedTasks.length
     ? `\n\nThe builder has already completed these tasks, so leave them out of the checklist:\n${completedTasks.map((t) => `- ${t}`).join("\n")}`
@@ -94,6 +98,7 @@ export async function buildKit(
       ],
     })
     .finalMessage();
+  meter.record(message);
   assertCompleted(message);
   if (!message.parsed_output) throw new Error("Kit returned no structured output");
   return message.parsed_output;

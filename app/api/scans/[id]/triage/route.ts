@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireActive } from "@/lib/access";
 import { triageRepo } from "@/lib/ai/triage";
 import { getSession, jsonError } from "@/lib/auth";
 import { getToken, repoSnapshot } from "@/lib/github";
 import { loadRepos, loadScan, stepError, type RouteParams } from "@/lib/scans";
 import { triageIsFresh } from "@/lib/types";
+import { createMeter } from "@/lib/usage";
 
 export const maxDuration = 120;
 
@@ -11,6 +13,8 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const { supabase, user } = await getSession();
   if (!user) return jsonError("Not signed in", 401);
+  const access = await requireActive(supabase);
+  if (access instanceof NextResponse) return access;
 
   const { repoId } = (await request.json()) as { repoId?: string };
   const scan = await loadScan(supabase, id);
@@ -25,9 +29,10 @@ export async function POST(request: Request, { params }: RouteParams) {
   const token = await getToken(supabase, user.id);
   if (!token) return jsonError("GitHub is not connected", 400);
 
+  const meter = createMeter();
   try {
     const snapshot = await repoSnapshot(token, repo.full_name);
-    const triage = await triageRepo(repo, snapshot);
+    const triage = await triageRepo(repo, snapshot, meter);
     const { error } = await supabase
       .from("mostviable_repos")
       .update({
@@ -37,8 +42,10 @@ export async function POST(request: Request, { params }: RouteParams) {
       })
       .eq("id", repo.id);
     if (error) throw new Error(error.message);
+    await meter.save(supabase, { scanId: id, step: "triage" });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    await meter.save(supabase, { scanId: id, step: "triage", error: err });
     return stepError(err);
   }
 }

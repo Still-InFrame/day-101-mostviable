@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
+import { requireActive } from "@/lib/access";
 import { getSession, jsonError } from "@/lib/auth";
 import { getToken } from "@/lib/github";
 import { syncRepos } from "@/lib/repos";
 import { loadRepos, stepError } from "@/lib/scans";
-import { currentRepos, MAX_REPOS_PER_SCAN, MAX_SCANS_PER_DAY } from "@/lib/types";
+import { currentRepos, MAX_REPOS_PER_SCAN } from "@/lib/types";
 
 export async function POST() {
   const { supabase, user } = await getSession();
   if (!user) return jsonError("Not signed in", 401);
+  const access = await requireActive(supabase);
+  if (access instanceof NextResponse) return access;
   if (!process.env.ANTHROPIC_API_KEY) {
     return jsonError("ANTHROPIC_API_KEY is not set on the server", 500);
   }
@@ -19,9 +22,12 @@ export async function POST() {
   const { count } = await supabase
     .from("mostviable_scans")
     .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
     .gte("created_at", since);
-  if ((count ?? 0) >= MAX_SCANS_PER_DAY) {
-    return jsonError(`Limit of ${MAX_SCANS_PER_DAY} scans per day reached`, 429);
+  // Admins are exempt so they can always test; everyone else gets their own
+  // limit, or the app default, as resolved by the access check.
+  if (access.role !== "admin" && (count ?? 0) >= access.daily_scan_limit) {
+    return jsonError(`Limit of ${access.daily_scan_limit} scans per day reached`, 429);
   }
 
   try {

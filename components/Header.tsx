@@ -14,13 +14,31 @@ export function Wordmark() {
   );
 }
 
-export function Header({ email }: { email?: string | null }) {
+export function Header({ email, isAdmin = false }: { email?: string | null; isAdmin?: boolean }) {
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-line/70 bg-bg/75 backdrop-blur-md">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-5">
-        <Link href="/" className="transition-opacity hover:opacity-80">
-          <Wordmark />
-        </Link>
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Link href="/" className="transition-opacity hover:opacity-80">
+            <Wordmark />
+          </Link>
+          {isAdmin && (
+            <nav className="flex items-center gap-1 text-sm">
+              <Link
+                href="/"
+                className="hidden rounded-full px-3 py-1 text-muted transition-colors hover:text-text sm:block"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/admin"
+                className="rounded-full px-3 py-1 text-muted transition-colors hover:text-text"
+              >
+                Admin
+              </Link>
+            </nav>
+          )}
+        </div>
         <form action="/auth/signout" method="post" className="flex items-center gap-3">
           {email && (
             <span className="hidden items-center gap-2.5 text-sm text-muted sm:flex">
@@ -33,7 +51,7 @@ export function Header({ email }: { email?: string | null }) {
               {email}
             </span>
           )}
-          <button className="rounded-full border border-line px-3 py-1 text-sm text-muted transition-colors hover:border-muted/50 hover:text-text">
+          <button className="rounded-full border border-line px-3 py-1 text-sm whitespace-nowrap text-muted transition-colors hover:border-muted/50 hover:text-text">
             Sign out
           </button>
         </form>

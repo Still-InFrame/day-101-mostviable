@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireActive } from "@/lib/access";
 import { buildKit } from "@/lib/ai/rank";
 import type { ScanResult } from "@/lib/ai/schemas";
 import { getSession, jsonError } from "@/lib/auth";
 import { loadRepos, loadScan, stepError, type RouteParams } from "@/lib/scans";
+import { createMeter } from "@/lib/usage";
 
 export const maxDuration = 300;
 
@@ -12,6 +14,8 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const { supabase, user } = await getSession();
   if (!user) return jsonError("Not signed in", 401);
+  const access = await requireActive(supabase);
+  if (access instanceof NextResponse) return access;
 
   const { repoId, last } = (await request.json()) as { repoId?: string; last?: boolean };
   const scan = await loadScan(supabase, id);
@@ -33,6 +37,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true, complete });
   };
 
+  const meter = createMeter();
+  let called = false;
   try {
     if (winner.kit) return await finish(scan.result);
 
@@ -46,7 +52,15 @@ export async function POST(request: Request, { params }: RouteParams) {
       .eq("repo_id", repo.id)
       .eq("done", true);
 
-    const kit = await buildKit(repo, winner, (doneItems ?? []).map((i) => i.task));
+    called = true;
+    const kit = await buildKit(
+      repo,
+      winner,
+      (doneItems ?? []).map((i) => i.task),
+      meter,
+    );
+    await meter.save(supabase, { scanId: id, step: "kit" });
+    called = false;
 
     const { error: itemsError } = await supabase.from("mostviable_checklist_items").insert(
       kit.gap_checklist.map((item, position) => ({
@@ -65,6 +79,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       winners: scan.result.winners.map((w) => (w.repo_id === repo.id ? { ...w, kit } : w)),
     });
   } catch (err) {
+    if (called) await meter.save(supabase, { scanId: id, step: "kit", error: err });
     // The last winner still closes out the scan so results are viewable even
     // if its kit could not be written.
     if (last) {

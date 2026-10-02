@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireActive } from "@/lib/access";
 import { getSession, jsonError } from "@/lib/auth";
 import { getToken, GitHubError } from "@/lib/github";
 import { syncRepos } from "@/lib/repos";
@@ -6,6 +7,8 @@ import { syncRepos } from "@/lib/repos";
 export async function POST() {
   const { supabase, user } = await getSession();
   if (!user) return jsonError("Not signed in", 401);
+  const access = await requireActive(supabase);
+  if (access instanceof NextResponse) return access;
 
   const token = await getToken(supabase, user.id);
   if (!token) return jsonError("GitHub is not connected", 400);

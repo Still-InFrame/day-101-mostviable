@@ -2,6 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type { RepoSnapshot } from "@/lib/github";
 import type { RepoRow } from "@/lib/types";
+import type { Meter } from "@/lib/usage";
 import { anthropic, assertCompleted, FALLBACK, MODEL, SHARED_CONTEXT } from "./client";
 import { ResearchSchema, type StoredResearch } from "./schemas";
 import { describeRepo } from "./triage";
@@ -38,6 +39,7 @@ function collectSearchedUrls(content: Block[], into: Set<string>) {
 export async function researchRepo(
   repo: RepoRow,
   snapshot: RepoSnapshot,
+  meter: Meter,
 ): Promise<StoredResearch> {
   // The generated schema carries a "$schema" dialect marker that is not part
   // of the tool definition format, so it is dropped before sending.
@@ -78,6 +80,7 @@ export async function researchRepo(
       })
       .finalMessage();
 
+    meter.record(message);
     collectSearchedUrls(message.content, searched);
     assertCompleted(message);
 

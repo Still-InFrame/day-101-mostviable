@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { ConnectCard, EarlierReports, Hero, TopThree } from "@/components/Dashboard";
 import { Header } from "@/components/Header";
 import { Workspace, type RepoLite } from "@/components/Workspace";
+import { ACCESS_MESSAGES, touchAccess } from "@/lib/access";
 import { getSession } from "@/lib/auth";
 import { currentRepos, triageIsFresh, type RepoRow, type ScanRow } from "@/lib/types";
 
@@ -40,6 +41,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const { github } = await searchParams;
   const { supabase, user } = await getSession();
   if (!user) redirect("/login");
+  const access = await touchAccess(supabase);
 
   const [{ data: connection }, { data: repoRows }, { data: scanRows }] = await Promise.all([
     supabase.from("mostviable_github_connections").select("github_login").maybeSingle(),
@@ -88,7 +90,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <>
-      <Header email={user.email} />
+      <Header email={user.email} isAdmin={access.role === "admin"} />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-5 pb-16">
         <Hero />
 
@@ -110,7 +112,17 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
         {latest && <TopThree latest={latest} />}
 
-        {connection ? (
+        {access.status !== "active" ? (
+          <section className="surface rounded-3xl px-6 py-12 sm:px-10">
+            <p className="eyebrow">Access</p>
+            <h2 className="mt-3 font-display text-4xl">{ACCESS_MESSAGES[access.status]}</h2>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted">
+              {access.status === "pending"
+                ? "New accounts are approved by hand. You will be able to connect GitHub and run scans as soon as yours is."
+                : "You can still open your earlier reports. Contact the owner if you think this is a mistake."}
+            </p>
+          </section>
+        ) : connection ? (
           <Workspace
             login={connection.github_login}
             repos={repos}

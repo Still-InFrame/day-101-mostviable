@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireActive } from "@/lib/access";
 import { rankCandidates } from "@/lib/ai/rank";
 import type { ScanResult, Winner } from "@/lib/ai/schemas";
 import { getSession, jsonError } from "@/lib/auth";
 import { loadRepos, loadScan, stepError, type RouteParams } from "@/lib/scans";
+import { createMeter } from "@/lib/usage";
 
 export const maxDuration = 300;
 
@@ -10,11 +12,16 @@ export async function POST(_request: Request, { params }: RouteParams) {
   const { id } = await params;
   const { supabase, user } = await getSession();
   if (!user) return jsonError("Not signed in", 401);
+  const access = await requireActive(supabase);
+  if (access instanceof NextResponse) return access;
 
   const scan = await loadScan(supabase, id);
   if (!scan) return jsonError("Scan not found", 404);
   if (scan.result) return NextResponse.json({ ok: true, reused: true });
 
+  const meter = createMeter();
+  // Only a step that actually called the model is worth a telemetry row.
+  let called = false;
   try {
     const repos = await loadRepos(supabase, scan.repo_ids);
     const shortlist = repos.filter(
@@ -30,7 +37,8 @@ export async function POST(_request: Request, { params }: RouteParams) {
     }
     const others = repos.filter((r) => !scan.shortlist_ids.includes(r.id) && r.triage);
 
-    const rank = await rankCandidates(shortlist, others);
+    called = true;
+    const rank = await rankCandidates(shortlist, others, meter);
 
     // The model returns names; map them back to rows and drop anything that
     // is not actually on the shortlist.
@@ -51,8 +59,10 @@ export async function POST(_request: Request, { params }: RouteParams) {
       .update({ status: "ranking", result })
       .eq("id", id);
     if (error) throw new Error(error.message);
+    await meter.save(supabase, { scanId: id, step: "rank" });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (called) await meter.save(supabase, { scanId: id, step: "rank", error: err });
     return stepError(err);
   }
 }

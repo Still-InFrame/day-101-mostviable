@@ -1,12 +1,18 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { touchAccess } from "@/lib/access";
 import { getSession } from "@/lib/auth";
 import { authorizeUrl, STATE_COOKIE } from "@/lib/github";
 
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
-  const { user } = await getSession();
+  const { supabase, user } = await getSession();
   if (!user) return NextResponse.redirect(`${origin}/login`);
+  // Pending and blocked accounts are sent back to the dashboard, which
+  // explains their status.
+  if ((await touchAccess(supabase)).status !== "active") {
+    return NextResponse.redirect(`${origin}/`);
+  }
 
   const state = randomBytes(16).toString("hex");
   const response = NextResponse.redirect(

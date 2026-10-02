@@ -1,6 +1,7 @@
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { RepoSnapshot } from "@/lib/github";
 import type { RepoRow } from "@/lib/types";
+import type { Meter } from "@/lib/usage";
 import { anthropic, assertCompleted, FALLBACK, MODEL, SHARED_CONTEXT } from "./client";
 import { TriageSchema, type Triage } from "./schemas";
 
@@ -40,7 +41,11 @@ export function describeRepo(repo: RepoRow, snapshot: RepoSnapshot) {
   return parts.join("\n");
 }
 
-export async function triageRepo(repo: RepoRow, snapshot: RepoSnapshot): Promise<Triage> {
+export async function triageRepo(
+  repo: RepoRow,
+  snapshot: RepoSnapshot,
+  meter: Meter,
+): Promise<Triage> {
   const message = await anthropic().beta.messages.parse({
     ...FALLBACK,
     model: MODEL,
@@ -54,6 +59,7 @@ export async function triageRepo(repo: RepoRow, snapshot: RepoSnapshot): Promise
       },
     ],
   });
+  meter.record(message);
   assertCompleted(message);
   if (!message.parsed_output) throw new Error("Triage returned no structured output");
   const triage = message.parsed_output;
