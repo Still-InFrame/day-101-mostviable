@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { decrypt } from "@/lib/crypto";
 
 // `repo` is the only classic OAuth scope that can read private repositories.
-export const GITHUB_SCOPE = "repo";
+const GITHUB_SCOPE = "repo";
 export const STATE_COOKIE = "gh_oauth_state";
 
 const API = "https://api.github.com";

@@ -19,10 +19,36 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
 });
 
+const TITLE = "mostviable";
+const DESCRIPTION =
+  "Scan your GitHub repos and find the three apps most worth selling, with market research, pricing and a go-to-market plan.";
+
 export const metadata: Metadata = {
-  title: "mostviable",
-  description:
-    "Scan your GitHub repos and find the three apps most worth selling, with market research, pricing and a go-to-market plan.",
+  // Makes the relative share-image path below resolve to an absolute URL.
+  metadataBase: new URL("https://mostviable.100dayaichallenge.com"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: TITLE,
+    type: "website",
+    images: [
+      {
+        url: "/hero.png",
+        width: 1536,
+        height: 1024,
+        alt: "mostviable: find out which of your apps is worth selling",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/hero.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

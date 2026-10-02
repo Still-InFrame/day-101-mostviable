@@ -25,7 +25,7 @@ export type RepoRow = {
   synced_at: string;
 };
 
-export type ScanStatus = "triage" | "research" | "ranking" | "complete" | "failed";
+type ScanStatus = "triage" | "research" | "ranking" | "complete" | "failed";
 
 export type ScanRow = {
   id: string;
@@ -52,7 +52,7 @@ export type ChecklistItem = {
 export const SHORTLIST_SIZE = 8;
 export const MAX_REPOS_PER_SCAN = 150;
 export const MAX_SCANS_PER_DAY = 5;
-export const RESEARCH_MAX_AGE_DAYS = 30;
+const RESEARCH_MAX_AGE_DAYS = 30;
 
 // Postgres and GitHub format the same instant differently, so compare by value.
 function sameInstant(a: string | null, b: string | null) {
