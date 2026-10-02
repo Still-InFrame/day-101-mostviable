@@ -28,6 +28,10 @@ export default async function LoginPage({
           sizes="100vw"
           className="object-cover object-right"
         />
+        <div className="smoke">
+          <div className="smoke-layer smoke-a" />
+          <div className="smoke-layer smoke-b" />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/85 to-bg/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg/60" />
       </div>

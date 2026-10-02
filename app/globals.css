@@ -139,6 +139,75 @@ body {
   animation: bar-grow 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+/* Drifting smoke over the login artwork. Each layer is a tileable noise
+   texture laid out as a 2x grid of tiles and slid by exactly one tile, so the
+   loop has no seam. Only transforms and opacity animate, so the browser never
+   repaints the texture. The two layers cross each other, which is what makes
+   the haze look like it is billowing rather than sliding. */
+.smoke {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  /* Keeps the smoke around the pillars and off the headline. */
+  mask-image: radial-gradient(ellipse 64% 68% at 72% 70%, black 15%, transparent 80%);
+  animation: smoke-breathe 9s ease-in-out infinite alternate;
+}
+
+.smoke-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  background-repeat: repeat;
+  will-change: transform;
+}
+
+/* Low haze sliding left. */
+.smoke-a {
+  height: 100%;
+  background-size: 50% 100%;
+  opacity: 0.6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.009 0.022' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.92 0 0 0 0 0.36 3.4 0 0 0 -1.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  animation: smoke-slide 38s linear infinite;
+}
+
+/* Broader plumes rising up and to the right. */
+.smoke-b {
+  height: 200%;
+  background-size: 50% 50%;
+  opacity: 0.42;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.016' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.92 0 0 0 0 0.36 3.2 0 0 0 -1.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  animation: smoke-rise 60s linear infinite;
+}
+
+@keyframes smoke-slide {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes smoke-rise {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes smoke-breathe {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }
@@ -193,7 +262,9 @@ body {
   .bar-slide,
   .rise,
   .ring-arc,
-  .bar-grow {
+  .bar-grow,
+  .smoke,
+  .smoke-layer {
     animation: none;
   }
   .surface-hover:hover,
